@@ -45,42 +45,28 @@ def pad(t0,t1,freqs,g=.05):
 # --- cue times exported by render.mjs from reel.js
 C=json.load(open('cues.json'))
 T=C['T']; s2,s3,s4,s5=T['s2'],T['s3'],T['s4'],T['s5']
+# Transition sounds only: soft whooshes into each move, low impacts on scene changes.
+# No music bed, no beeps, no rapid tick bursts.
 # --- Scene 1: intro
-blip(0.12,880,.25); boom(0.12,.35,60)
-whoosh(0.6,0.95,.3)
-boom(1.28,.95); blip(1.28,1760,.08,-.4); blip(1.48,1318,.08,.4)
-for k in range(13): tick(2.0+k*.054,.07,-.5)
-for k in range(7): tick(2.3+k*.07,.05,.5)
-whoosh(s2-.8,.7,.3)
+whoosh(0.6,0.95,.28)
+boom(1.28,.6)
+whoosh(s2-.8,.7,.28)
 # --- Scene 2: approach
-boom(s2,.8); kick(s2,.5)
+boom(s2,.5)
 for s in C['SLOT']:
-    whoosh(s,.45,.18,rise=False,pan=.2); tick(s+.22,.14)
-blip(C['SLOT'][-1]+.45,1975,.16); blip(C['SLOT'][-1]+.45,1318,.12)
-# --- beat bed (100bpm)
-b=s2
-while b<s5-.2:
-    kick(b,.3); hat(b+.3,.04); b+=.6
-pad(s2-.05,s5+.2,[110,164.8,220,277.2],.06)
+    whoosh(s,.45,.12,rise=False,pan=.2)
 # --- Scene 3: impact
-whoosh(s3-.5,.5,.4); boom(s3,1.0,40)
+whoosh(s3-.5,.5,.35); boom(s3,.6,40)
 for i in range(5):
     st=C['STAT']['first']+i*C['STAT']['dur']
-    blip(st,[1046,1175,1318,1568,1760][i],.14)
-    for k in range(12): tick(st+.02+k*.07*(1+k*.1),.06,(k%2)*.6-.3)
-    if i<4: whoosh(st+C['STAT']['dur']-.35,.35,.16,pan=.3)
+    if i<4: whoosh(st+C['STAT']['dur']-.35,.35,.14,pan=.3)
 # --- Scene 4: journey
-whoosh(s4-.35,.35,.25); boom(s4,.6,52)
+whoosh(s4-.35,.35,.22); boom(s4,.4,52)
 for i,tt in enumerate(C['nodes']):
-    if i>0: whoosh(tt-.45,.6,.12,rise=False,pan=-.3)
-    blip(tt+.1,[659,784,880,988,1175,1318,1568][i],.12,-.6+i*.2); tick(tt+.1,.08)
+    if i>0: whoosh(tt-.45,.6,.1,rise=False,pan=-.3)
 # --- Scene 5: end card
-whoosh(s5-.7,.75,.55)
-boom(s5+.05,1.2,38); kick(s5+.05,.6)
-pad(s5+.05,DUR,[220,277.2,329.6,440,554.4],.07)
-blip(s5+.6,1760,.08); blip(s5+.8,2093,.06)
-for k in range(10): tick(s5+1.3+k*.045,.05,-.4)
-blip(s5+2.1,880,.1)
+whoosh(s5-.7,.75,.45)
+boom(s5+.05,.75,38)
 # master: soft clip + fade out
 peak=max(max(abs(x) for x in L),max(abs(x) for x in R))
 with wave.open('sound.wav','wb') as w:
@@ -88,7 +74,7 @@ with wave.open('sound.wav','wb') as w:
     fr=bytearray()
     for i in range(N):
         t=i/SR; f=min(1,(DUR-t)/.35)
-        a=math.tanh(L[i]/peak*1.6)*.85*f; c=math.tanh(R[i]/peak*1.6)*.85*f
+        a=math.tanh(L[i]/peak*1.0)*.8*f; c=math.tanh(R[i]/peak*1.0)*.8*f
         fr+=struct.pack('<hh',int(a*32767),int(c*32767))
     w.writeframes(bytes(fr))
 print('peak',peak)
