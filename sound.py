@@ -1,6 +1,6 @@
 # Pure-python sound design, cue-locked to index.html timings. Writes sound.wav (48k stereo).
-import math, random, struct, wave
-SR=48000; DUR=25.0; N=int(SR*DUR)
+import json, math, random, struct, wave
+SR=48000; DUR=json.load(open('cues.json'))['DUR']; N=int(SR*DUR)
 L=[0.0]*N; R=[0.0]*N
 rnd=random.Random(3)
 def add(t0,fn,length,gain=1.0,pan=0.0):
@@ -42,51 +42,45 @@ def pad(t0,t1,freqs,g=.05):
         return env*sum(math.sin(2*math.pi*f*t+math.sin(2*math.pi*.3*t)*.6)/len(freqs) for f in freqs)
     add(t0,fn,t1-t0,g)
 
+# --- cue times exported by render.mjs from reel.js
+C=json.load(open('cues.json'))
+T=C['T']; s2,s3,s4,s5=T['s2'],T['s3'],T['s4'],T['s5']
 # --- Scene 1: intro
 blip(0.12,880,.25); boom(0.12,.35,60)
 whoosh(0.6,0.95,.3)
 boom(1.28,.95); blip(1.28,1760,.08,-.4); blip(1.48,1318,.08,.4)
 for k in range(13): tick(2.0+k*.054,.07,-.5)
 for k in range(7): tick(2.3+k*.07,.05,.5)
-whoosh(3.15,.7,.3)
+whoosh(s2-.8,.7,.3)
 # --- Scene 2: approach
-boom(3.95,.8); kick(3.95,.5)
-for s in [4.75,5.3,5.85,6.4]:
-    whoosh(s,.4,.18,rise=False,pan=.2); tick(s+.21,.14)
-blip(6.85,1975,.16); blip(6.85,1318,.12)
-# --- beat bed (100bpm) 3.95 -> 21.6
-b=3.95
-while b<21.5:
-    kick(b,.34); hat(b+.3,.045); b+=.6
-pad(3.9,21.9,[110,164.8,220,277.2],.06)
+boom(s2,.8); kick(s2,.5)
+for s in C['SLOT']:
+    whoosh(s,.45,.18,rise=False,pan=.2); tick(s+.22,.14)
+blip(C['SLOT'][-1]+.45,1975,.16); blip(C['SLOT'][-1]+.45,1318,.12)
+# --- beat bed (100bpm)
+b=s2
+while b<s5-.2:
+    kick(b,.3); hat(b+.3,.04); b+=.6
+pad(s2-.05,s5+.2,[110,164.8,220,277.2],.06)
 # --- Scene 3: impact
-whoosh(7.5,.5,.4); boom(8.0,1.0,40)
+whoosh(s3-.5,.5,.4); boom(s3,1.0,40)
 for i in range(5):
-    st=8.15+i*1.7
+    st=C['STAT']['first']+i*C['STAT']['dur']
     blip(st,[1046,1175,1318,1568,1760][i],.14)
     for k in range(12): tick(st+.02+k*.07*(1+k*.1),.06,(k%2)*.6-.3)
-    if i<4: whoosh(st+1.35,.35,.16,pan=.3)
+    if i<4: whoosh(st+C['STAT']['dur']-.35,.35,.16,pan=.3)
 # --- Scene 4: journey
-whoosh(16.4,.35,.25); boom(16.75,.6,52)
-def cubic_inv(y):
-    lo,hi=0,1
-    for _ in range(40):
-        m=(lo+hi)/2; v=4*m**3 if m<.5 else 1-(-2*m+2)**3/2
-        lo,hi=(m,hi) if v<y else (lo,m)
-    return m
-s4,s5=16.75,21.7; endX=300+6*700-960
-for i in range(7):
-    nx=300+i*700; pn=(nx-1060)/endX
-    tt=s4+.4 if pn<=0 else s4+.2+cubic_inv(pn)*(s5-1.05-s4)
-    if i==1: tt=s4+.55
-    blip(tt+.05,[659,784,880,988,1175,1318,1568][i],.12,-.6+i*.2); tick(tt+.05,.08)
+whoosh(s4-.35,.35,.25); boom(s4,.6,52)
+for i,tt in enumerate(C['nodes']):
+    if i>0: whoosh(tt-.45,.6,.12,rise=False,pan=-.3)
+    blip(tt+.1,[659,784,880,988,1175,1318,1568][i],.12,-.6+i*.2); tick(tt+.1,.08)
 # --- Scene 5: end card
-whoosh(21.0,.75,.55)
-boom(21.75,1.2,38); kick(21.75,.6)
-pad(21.75,25.0,[220,277.2,329.6,440,554.4],.07)
-blip(22.3,1760,.08); blip(22.5,2093,.06)
-for k in range(10): tick(23.0+k*.045,.05,-.4)
-blip(23.8,880,.1)
+whoosh(s5-.7,.75,.55)
+boom(s5+.05,1.2,38); kick(s5+.05,.6)
+pad(s5+.05,DUR,[220,277.2,329.6,440,554.4],.07)
+blip(s5+.6,1760,.08); blip(s5+.8,2093,.06)
+for k in range(10): tick(s5+1.3+k*.045,.05,-.4)
+blip(s5+2.1,880,.1)
 # master: soft clip + fade out
 peak=max(max(abs(x) for x in L),max(abs(x) for x in R))
 with wave.open('sound.wav','wb') as w:

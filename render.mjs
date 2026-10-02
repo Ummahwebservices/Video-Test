@@ -3,6 +3,7 @@
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
+import { writeFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
 const url = 'file://' + path.resolve('index.html') + '?render';
@@ -10,6 +11,8 @@ const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromi
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
 await page.goto(url);
 await page.evaluate(() => document.fonts.ready);
+// share cue times with sound.py so audio stays locked to the animation
+writeFileSync('cues.json', JSON.stringify(await page.evaluate(() => window.CUES), null, 1));
 
 if (args[0] === '--stills') {
   for (const t of args[1].split(',').map(Number)) {
