@@ -21,7 +21,7 @@ if (args[0] === '--stills') {
   const fps = Number(args[1] || 60);
   const dur = await page.evaluate(() => window.DUR);
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
-    '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out], { stdio: ['pipe', 'inherit', 'inherit'] });
+    '-c:v', 'libx264', '-preset', 'slow', '-crf', '21', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out], { stdio: ['pipe', 'inherit', 'inherit'] });
   const n = Math.round(dur * fps);
   for (let i = 0; i < n; i++) {
     await page.evaluate(t => window.render(t), i / fps);
